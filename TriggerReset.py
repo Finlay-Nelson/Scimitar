@@ -28,7 +28,10 @@ class NI:
                 'Dev1/port0/line'+str(i), 
                 line_grouping=LG.CHAN_PER_LINE
                 )
-            activePO.append(False)
+            if self.deviceList[i][1] == True:
+                activePO.append(True)
+            elif self.deviceList[i][1] == False:
+                activePO.append(False)
         return self
     configure.__doc__ = "Create a digital output channel with a line for every port on the DAQ. Iterate through every device and extract its boolean status value to determine whether it should be armed or not. "
     ###########################################################################
