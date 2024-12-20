@@ -1,6 +1,6 @@
 ###############################################################################
 """
-Reset the Digital Outputs from the USB6349 to 0V
+Reset the Digital Outputs from the USB6349 to 0V. Note that digital control of the SLS205 refers to the shutter, and so to instill a dark state requires a True status for that device
 """
 ###############################################################################
 import nidaqmx as ni
