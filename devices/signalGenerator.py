@@ -5,11 +5,7 @@ Interaction with the Agilent33220A function generator
  Not yet with the class structure consistant with other devices.
 """
 
-###############################################################################
-
 import pyvisa
-
-###############################################################################
 
 # Create a resource manager
 rm = pyvisa.ResourceManager()
@@ -42,7 +38,6 @@ sig_gen.write('TRIG:SOUR EXT')  # Accepts triggers from external source
 # Close the connection
 sig_gen.close()
 
-###############################################################################
 
 # Useful functions
 # *RST - Reset the instrument to default settings
@@ -108,6 +103,3 @@ sig_gen.close()
 # DISP:TEXT:CLE         - Clear custom message from the display
 
 # SYST:BEEP - Generate a beep sound
-
-###############################################################################
-
