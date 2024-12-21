@@ -1,7 +1,8 @@
 """
 
 Interaction with the Agilent33220A function generator
-
+*Needs written in a format that allows integration with Scimitar.
+ Not yet with the class structure consistant with other devices.
 """
 
 ###############################################################################
