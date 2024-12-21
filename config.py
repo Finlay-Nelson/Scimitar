@@ -35,7 +35,7 @@ ZABER_POSLIM = {"Ax1_min": 0,
                 "Ax1_max": 0,
                 "Ax2_min": 0,
                 "Ax2_max": 0}
-ZABERVEL = 
+ZABERVEL = NONE
 
 LASERCOM = 3
 
