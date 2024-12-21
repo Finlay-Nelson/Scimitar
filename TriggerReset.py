@@ -1,4 +1,4 @@
-###############################################################################
+
 """
 Reset the Digital Outputs from the USB6349 to 0V. Note that digital control of the SLS205 refers to the shutter, and so to instill a dark state requires a True status for that device
 """
@@ -6,6 +6,7 @@ Reset the Digital Outputs from the USB6349 to 0V. Note that digital control of t
 import nidaqmx as ni
 from nidaqmx.constants import LineGrouping as LG
 ###############################################################################
+
 class NI:
     def __init__(self,deviceList):
         PO = ni.Task('Digital Output') 
@@ -38,8 +39,8 @@ class NI:
     def trigger(self):
         self.PO.write(self.activePO)
     trigger.__doc__ = "Writes to the digital output channel according to the arming characteristics provided through configure()"
-###############################################################################
     
+###############################################################################
 
 ###############################################################################   
 if __name__ == "__main__":
@@ -60,4 +61,5 @@ if __name__ == "__main__":
     with exp as obj:
         obj.configure()
         obj.trigger()
+        
 ###############################################################################
