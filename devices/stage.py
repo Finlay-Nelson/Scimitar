@@ -124,9 +124,9 @@ class ASR(Zaber):
 
 ###############################################################################
 
-class E873(PI):
+class Q545(PI):
     """
-    E873 Piezoelectric Stage, a subclass of PI.
+    Q545 Piezoelectric Stage, a subclass of PI.
     """
     def __init__(self, model, serial, origin):
         super().__init__()
@@ -140,10 +140,10 @@ class E873(PI):
         try:
             self.pidevice.ConnectUSB(serialnum=self.serial)
         except Exception as e:
-            print(f"Error connecting to E-873: {e}")
+            print(f"Error connecting to Q-545: {e}")
             raise
         self._initialize_servo()
-        print('E-873 Connected')
+        print('Q-545 Connected')
         pitools.waitontarget(self.pidevice, 1)
         time.sleep(0.1)
         return self
@@ -152,7 +152,7 @@ class E873(PI):
         self.pidevice.MOV(1, 0.0)
         pitools.waitontarget(self.pidevice, 1)
         self.pidevice.__exit__(None, None, None)
-        print('E-873 Disconnected')
+        print('Q-545 Disconnected')
         time.sleep(0.1)
         super().__exit__(exc_type, exc_value, traceback)
     
