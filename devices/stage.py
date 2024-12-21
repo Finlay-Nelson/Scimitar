@@ -185,4 +185,5 @@ class Q545(PI):
          Get the current position of the piezoelectric stage.
          """
          return self.pidevice.qPOS(1)[1]
+        
 ###############################################################################
