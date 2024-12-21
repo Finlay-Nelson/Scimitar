@@ -1,12 +1,10 @@
 """
-Created on Sat Sep 28 10:09:32 2024
 
 Controls stage devices
 - Zaber: ASR100B120B-T3A / A-MCB2 (controller)
 - Physike Instrumente: Q-545.140 Q-Motion / E-873 (controller)
 
 """
-###############################################################################
 
 # devices/stages.py
 import zaber_motion
@@ -15,8 +13,6 @@ import time
 
 from pipython import GCSDevice, pitools
 from abc import ABC, abstractmethod
-
-###############################################################################
 
 class Stage(ABC):
     """
@@ -40,8 +36,6 @@ class Stage(ABC):
         """Exit the context manager."""
         pass
 
-###############################################################################
-
 class Zaber(Stage):
     """
     Zaber Stage, a subclass of Stage.
@@ -55,8 +49,6 @@ class Zaber(Stage):
     def __exit__(self, exc_type, exc_value, traceback):
         super().__exit__(exc_type, exc_value, traceback)
 
-###############################################################################
-
 class PI(Stage):
     """
     PI Stage, a subclass of Stage.
@@ -69,8 +61,6 @@ class PI(Stage):
 
     def __exit__(self, exc_type, exc_value, traceback):
         super().__exit__(exc_type, exc_value, traceback)
-
-###############################################################################
 
 class ASR(Zaber):
     """
@@ -123,8 +113,6 @@ class ASR(Zaber):
             self.axis2.get_position(zaber_motion.Units.LENGTH_MICROMETRES)
         ]
         return pos
-
-###############################################################################
 
 class Q545(PI):
     """
@@ -185,5 +173,3 @@ class Q545(PI):
          Get the current position of the piezoelectric stage.
          """
          return self.pidevice.qPOS(1)[1]
-        
-###############################################################################
