@@ -40,6 +40,7 @@ class Stage(ABC):
         """Exit the context manager."""
         pass
 
+###############################################################################
 
 class Zaber(Stage):
     """
@@ -54,6 +55,7 @@ class Zaber(Stage):
     def __exit__(self, exc_type, exc_value, traceback):
         super().__exit__(exc_type, exc_value, traceback)
 
+###############################################################################
 
 class PI(Stage):
     """
