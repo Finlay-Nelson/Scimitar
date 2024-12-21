@@ -12,15 +12,15 @@ class NI:
         self.PO = PO
         self.deviceList = deviceList
     __init__.__doc__ = "Create an instance of the NI DAQ which contains a PO task. The PO task is responsible for digitally triggering other devices (spectrometer, signal generator, etc.). Device list contains name and boolean status"
-    ###########################################################################
+    
     def __enter__(self):
         return self
     __enter__.__doc__ = "Context manager"
-    ###########################################################################  
+    
     def __exit__(self, exc_type, exc_value, traceback):
         ni.Task.close(self.PO)
     __exit__.__doc__ = "Close the task(s) to free up the DAQ."
-    ###########################################################################
+    
     def configure(self):
         activePO = []
         for i in range(len(self.deviceList)):
@@ -34,7 +34,7 @@ class NI:
                 activePO.append(False)
         return self
     configure.__doc__ = "Create a digital output channel with a line for every port on the DAQ. Iterate through every device and extract its boolean status value to determine whether it should be armed or not. "
-    ###########################################################################
+    
     def trigger(self):
         self.PO.write(self.activePO)
     trigger.__doc__ = "Writes to the digital output channel according to the arming characteristics provided through configure()"
