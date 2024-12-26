@@ -151,7 +151,7 @@ if __name__ == "__main__":
         laser.get_power()
         time.sleep(5)
         laser.set_power(0)
-        laser.get_power(0)
+        laser.get_power()
         laser.deactivate()
     finally:
         laser.disconnect()
