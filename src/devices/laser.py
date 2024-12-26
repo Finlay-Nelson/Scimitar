@@ -1,8 +1,16 @@
 
 """
 
-Contains the functions needed for routine use of Vortran devices. It so far has been configured solely for a Vortran Stradus laser diode
-
+Contains the functions needed for routine use of Vortran devices. It so far has been configured solely for a Vortran Stradus laser diode. The example test code should perform the following routine:
+- Connect
+- Activate
+- Set mode to continuous wave and return confirmation of mode
+- Set power to 50 mW and return confirmation of power
+- Wait 5 seconds
+- Return power to 0mW and return confirmation
+- Deactivate
+- Disconnect
+- 
 
 """
 
@@ -80,7 +88,6 @@ class Vortran:
 
         """
         print("Set Power")
-        
         
     def get_power(self):
         """
