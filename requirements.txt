@@ -8,3 +8,6 @@ pip freeze > requirements.txt
 Manual Inclusions:
 
 import time
+
+from abc import ABC
+from abc import abstract method

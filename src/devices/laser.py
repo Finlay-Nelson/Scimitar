@@ -73,7 +73,7 @@ class Vortran:
         """
         print("Deactivate")
         
-    def set_power(self,power):
+    def setPower(self,power):
         """
         
 
@@ -89,7 +89,7 @@ class Vortran:
         """
         print("Set Power")
         
-    def get_power(self):
+    def getPower(self):
         """
         
 
@@ -100,7 +100,7 @@ class Vortran:
         """
         print("Get Power")
         
-    def set_mode(self,mode):
+    def setMode(self,mode):
         """
         
 
@@ -116,7 +116,7 @@ class Vortran:
         """
         print("Set Mode")
         
-    def get_mode(self):
+    def getMode(self):
         """
         
 
@@ -127,7 +127,7 @@ class Vortran:
         """
         print("Get Mode")
         
-    def send_command(self,command):
+    def sendCommand(self,command):
         """
         
 
