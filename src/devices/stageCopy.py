@@ -1,6 +1,19 @@
 
 """
 
+Polymorphism:
+    
+Q545 = Q545(model,serial,origin)
+ASR = ASR(channel,origin)
+   
+stages = [Q545, ASR]
+for stage in stages:
+    with stage:
+        print(stage.getPos())
+        
+The code above means we can define a list of stages and for any overlapping method names, getPos() setPos() etc then we can execute each of these methods using that devices own interpretation of the call even if those interpretations are quite different
+
+What we have here is a way of outlining all of the methods universal across all stage devices, as well as a way of outlining those only applicable to PI or Zaber devices, etc. If nothing else this script can serve as a template around which to introduce new devices
 
 
 """
