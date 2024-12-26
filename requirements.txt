@@ -2,3 +2,9 @@
 Generate this file with the following command once the project is finished:
 
 pip freeze > requirements.txt
+
+
+
+Manual Inclusions:
+
+import time
