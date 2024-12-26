@@ -21,15 +21,15 @@ class Vortran:
     
     def __init__(self,port,baudrate=115200,timeout=1):
         """
-        Initialize the connection to the Vortran device
+        Initialize connection to a Vortran laser
 
         Parameters
         ----------
-        port : INT
+        port : int
             Serial port (e.g. 'COM3')
-        baudrate : INT, optional
+        baudrate : int, optional
             Communication speed. The default is 115200.
-        timeout : FLOAT, optional
+        timeout : float, optional
             Read timeout in seconds. The default is 1.
 
         Returns
@@ -44,7 +44,7 @@ class Vortran:
     
     def connect(self):
         """
-        Open the serial connection to the laser
+        Open the laser serial connection
 
         Returns
         -------
@@ -60,7 +60,7 @@ class Vortran:
             
     def disconnect(self):
         """
-        Close the serial connection
+        Close the laser serial connection
 
         Returns
         -------
@@ -73,36 +73,62 @@ class Vortran:
         
     def activate(self):
         """
-        Turn on the laser
+        Turn laser emission ON
 
         Returns
         -------
         None.
 
         """
-        response = self.sendCommand("L=1")
+        self.sendCommand("LE=1")
+        response = self.sendCommand("?LE")
         print(f"Vortran device ON response: {response}")
         
     def deactivate(self):
         """
-        Turn off the laser
+        Turn laser emission OFF
 
         Returns
         -------
         None.
 
         """
-        response = self.sendCommand("L=0")
+        self.sendCommand("LE=0")
+        response = self.sendCommand("?LE")
         print(f"Vortran device OFF response: {response}")
         
+    def getConditions(self):
+        """
+        Return laser operating conditions
+        
+        Returns
+        -------
+        None.
+
+        """
+        response = self.sendCommand("?LI")
+        print(f"Device ID: {response}\r")
+        response = self.sendCommand("?BPT")
+        print(f"Baseplate temperature: {response}\r")
+        response = self.sendCommand("?FV")
+        print("Firmware version: {response}\r")
+        response = self.sendCommand("?LH")
+        print("Operating hours: {response}\r")
+        response = self.sendCommand("?LS")
+        print(f"Settings: {response}\r")
+        response = [self.sendCommand("?LP"),self.sendCommand("?LPS")]
+        print(f"Measured power: {response[0]} of Set power: {response[1]}\r")
+        response = self.sendCommand("?LW")
+        print(f"Measured wavelength: {response}nm\r")
+
     def setPower(self,power):
         """
-        Set the laser power
+        Set the laser output power. Prints output power to the command line
 
         Parameters
         ----------
-        power : INT
-            Desired output power as a percentage of maximum
+        power : float
+            Desired output power [mW]. In range 0 <= power <= 100
 
         Returns
         -------
@@ -111,28 +137,29 @@ class Vortran:
         """
         if not (0 <= power <= 100):
             raise ValueError("Power percentage must be between 0 and 100")
-        response = self.sendCommand(f"P={power}")
-        print(f"SetPower response: {response}")
+        self.sendCommand(f"LP={power}")
+        self.getPower
         
     def getPower(self):
         """
-        Query the current device output power
+        Query the current device output power. Returns the laser power measured
+by the light loop.
 
         Returns
         -------
         None.
 
         """
-        response = self.sendCommand("P?")
+        response = self.sendCommand("?LP")
         print(f"Current output power: {response}")
         
     def setMode(self,mode):
         """
-        Specify the output type from the Vortran device
+        Specify the output type from the Vortran device. Note that external control should be off when using either "CW" or "DIGITAL", so "EPC=0" is called to reset the external control condition but is overwritten should the user require "ANALOG" control. Operating mode returned to the command line for user verification
 
         Parameters
         ----------
-        mode : STR
+        mode : str
             Emission mode of the device ('CW','DIGITAL','ANALOG')
 
         Returns
@@ -140,15 +167,18 @@ class Vortran:
         None.
 
         """
+        self.sendCommand("EPC=0") # Reset external control
+            
         mode_map = {
-            "CW": "SOUR:AM:STAT OFF",
-            "DIGITAL": "SOUR:AM:STAT ON; SOUR:AM:INT DIG",
-            "ANALOG": "SOUR:AM:STAT ON; SOURC:AM:INT ANA"
+            "CW": "PUL=0",
+            "DIGITAL": "PUL=1",
+            "ANALOG": "EPC=1"
         }
         if mode not in mode_map:
             raise ValueError(f"Invalid mode. Supported modes are: {list(mode_map.keys())}")
         self.sendCommand(mode_map[mode])
-        print(f"Vortran device mode set to {mode}")
+        response = self.getMode()
+        print(f"Output mode: {response}")
         
     def getMode(self):
         """
@@ -157,30 +187,37 @@ class Vortran:
         Raises
         ------
         Exception
-            Unrecognised output mode returned by device. Most likely a use-case that has yet to be accounted for
+            Unrecognised response to digital modulation query (?PUL)
+            Unrecognised response to external control query (?EPC)
 
         Returns
         -------
-        STR
+        str
             Output mode (CW, DIGITAL, ANALOG)
 
         """
-        response = self.sendCommand("SOUR:AM:STAT?")
-        if response == "0":
-            return "CW"
-        elif response == "1":
-            source_type = self.sendCommand("SOUR:AM:INT?")
-            return "DIGITAL" if source_type == "DIG" else "ANALOG"
+        response = self.sendCommand("?EPC")
+        if response == "1":
+            return "ANALOG"
+        elif response == "0":
+            response = self.sendCommand("?PUL")
+            if response == "0":
+                return "CW"
+            elif response == "1":
+                return "DIGITAL"
+            else:
+                raise Exception("Unrecognised response to digital modulation query")
         else:
-            raise Exception("Unknown output mode")
+            raise Exception("Unrecognised response to external control query")
+            
         
     def sendCommand(self,command):
         """
-        Send a command to the Vortran device and return the response
+        Send a command to the laser and return the response
 
         Parameters
         ----------
-        command : STR
+        command : str
             Command to send to the device. Format must align with Vortran documentation
 
         Raises
@@ -190,8 +227,8 @@ class Vortran:
 
         Returns
         -------
-        response : STR
-            The base command return from Vortran devices. Can be interpreted in conjunction with Vortran documentation
+        response : str
+            The base command return from Vortran devices. Can be interpreted in conjunction with Vortran documentation. This has yet to be verified and may not function as intended
 
         """
         if not self.connection or not self.connection.is_open:
@@ -209,13 +246,11 @@ if __name__ == "__main__":
     try:
         laser.connect()
         laser.activate()
-        laser.set_mode("CW")
-        laser.get_mode()
-        laser.set_power(50)
-        laser.get_power()
+        laser.getConditions()
+        laser.setMode("CW")
+        laser.setPower(50)
         time.sleep(5)
-        laser.set_power(0)
-        laser.get_power()
+        laser.setPower(0)
         laser.deactivate()
     finally:
         laser.disconnect()
