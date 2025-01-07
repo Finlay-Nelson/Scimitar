@@ -1,4 +1,6 @@
 
+import zaber_motion
+
 from zaber_motion.ascii import Connection
 from zaber_motion.ascii import Axis
 
@@ -25,53 +27,50 @@ class ASR():
 
         """
         self.port = f'COM{port}'
-        self.device = None
-        self.axis1 = None
-        self.axis2 = None
+        self.zaberdevice = None
+        self.connection = None
+        self.axes = []
+        self.settings = self.Settings()
         
     def __enter__(self):
         try:
             """
             Establish connection to the ASR device
             """
-            self.device = Connection.open_serial_port(self.port).detect_devices(True)[0]
+            self.connection = Connection.open_serial_port(self.port)
+            self.zaberdevice = self.connection.detect_devices(True)[0]
             print("ASR Connected")
             """
-            Define the device axes
+            Define the device axes and set speed to safe bounds
             """
-            self.axis1 = Axis(self.zaberdevice, 1)
-            self.axis2 = Axis(self.zaberdevice, 2)
-            """ 
-            Axis settings
-            """
-            self.axis1.settings.set("maxspeed")/4
-            self.axis2.settings.set("maxspeed")/4
+            axisCount = self.zaberdevice.axis_count
+            
+            for ax in range(axisCount):
+                name = f"axis{ax+1}"
+                axis_instance = Axis(self.zaberdevice, ax+1)
+                setattr(self, name, axis_instance)
+                axis = getattr(self, name)
+                
+                vdefault = axis.settings.get_default("maxspeed")
+                axis.settings.set("maxspeed",vdefault/10)
+                self.axes.append(axis)
+
             print("Axes established:")
             """
             Perform homing if necessary (request user approval)
             """
-            while True:
-                if self.axis1.is_homed() or self.axis2.is_homed() == 0:
-                    """
-                    Limit the travel speed during homing
-                    """
-                    for axis in [self.axis1, self.axis2]:
-                        maxspeed = axis.settings.get("maxspeed")
-                        axis.settings.set("limit.approach.maxspeed",maxspeed)
-                    """
-                    Carry out homing
-                    """
-                    prompt = input("Confirm the microscope is safe to home? (y/n)")
-                    if prompt == "y":
-                        for axis in [self.axis1, self.axis2]:
-                            if not axis.is_homed():
-                                self.home(axis)
-                    elif prompt == "n":
-                        self.__exit__(None,None,None)
-                        break
-                    else:
-                        ValueError("Unrecognised input. Specify y or n") 
-                        raise
+            if self.zaberdevice.all_axes.is_homed() == 0:
+                prompt = input("Confirm the microscope is safe to home? (y/n): ")
+                if prompt == "y":
+                    for axis in self.axes:
+                        if not axis.is_homed():
+                            self.home(axis)
+                elif prompt == "n":
+                    self.__exit__(None,None,None)
+                else:
+                    ValueError("Unrecognised input. Specify y or n") 
+                    raise
+
         except Exception as e:
             ConnectionError(f"Couldn't connect to ASR: {e}")
             raise
@@ -115,7 +114,7 @@ class ASR():
         Returns
         -------
         float
-            The current position of the specified axis on the ASR device
+            The current position of the specified axis on the ASR device as a list
         
         Raises
         ------
@@ -124,7 +123,7 @@ class ASR():
         """
         unit = ASR.utils.lengthConversion(units)
         try:
-            pos = [f"{axis}.get_position(zaber_motion.Units.{unit})"]
+            pos = axis.get_position(zaber_motion.Units[unit])
             return pos
         except Exception as e:
             print(f"Couldn't retrieve location information: {e}")
@@ -148,9 +147,9 @@ class ASR():
         None.
 
         """
-        unit = self.utils.lengthConversion(units)
+        unit = ASR.utils.lengthConversion(units)
         try:
-            axis.move_absolute(target,unit,wait_until_idle=True)
+            axis.move_absolute(target,zaber_motion.Units[unit],wait_until_idle=True)
         except Exception as e:
             print(e)
                 
@@ -173,9 +172,9 @@ class ASR():
         None.
 
         """
-        unit = self.utils.lengthConversion(units)
+        unit = ASR.utils.lengthConversion(units)
         try:
-            axis.move_relative(step,unit,wait_until_idle=True)
+            axis.move_relative(step,zaber_motion.Units[unit],wait_until_idle=True)
         except Exception as e:
             print(e)
         
@@ -193,10 +192,11 @@ class ASR():
             }
         
         length_map = {
+        
             "mm": "LENGTH_MILLIMETRES",
             "millimeter": "LENGTH_MILLIMETRES",
             "millimeters": "LENGTH_MILLIMETRES",
-            "um": "LENGTH_MICROMETRES",
+            "um": ".LENGTH_MICROMETRES",
             "micrometer": "LENGTH_MICROMETRES",
             "micrometers": "LENGTH_MICROMETRES",
             "microns": "LENGTH_MICROMETRES",
@@ -208,78 +208,64 @@ class ASR():
             }
         
         @staticmethod
-        def velocityConversion(units):
-            if units:
-                unit = units.strip().lower()
-                if unit in ASR.utils.speed_map:
-                    return unit
+        def velocityConversion(unit):
+            if unit:
+                for key, value in ASR.utils.speed_map.items():
+                    if unit == key:
+                        return value
                 else:
                     raise ValueError("Unrecognised units. Try cm/s, mm/s, um/s, or nm/s")
                     
         @staticmethod    
-        def lengthConversion(units):
-            if units:
-                unit = units.strip().lower()
-                if unit in ASR.utils.length_map:
-                    return unit
+        def lengthConversion(unit):
+            if unit:
+                for key, value in ASR.utils.length_map.items():
+                    if unit == key:
+                        return value
                 else:
                     raise ValueError("Unrecognised units. Try mm, um, nm, or native")
                 
-    class settings:
-        
-        settings_map = {"Stage acceleration": "accel",
-                       "Device ID": "device.id",
-                       "Driver temperature": "driver.temperature",
-                       "Encoder measured position": "encoder.pos",
-                       "Position error": "encoder.pos.error",
-                       "Axis position": "pos",
-                       "Manual control direction": "knob.dir",
-                       "Translation step per control increment": "knob.distance",
-                       "Manual control enabled": "knob.enable",
-                       "Travel speed under manual control": "knob.maxspeed",
-                       "Manual control mode": "knob.mode",
-                       "Speed profile under manual control": "knob.speedprofile"}
-        
-        def __init__(self,device):
-            self.device = device
+    class Settings:
+   
+        def __init__(self):
+            self._parent = None
             
-        def __enter__(self):
+        def _set_parent(self, parent_instance):
+            """Set the parent instance after creation."""
+            self._parent = parent_instance
             return self
-        
-        def __exit__(self, exc_type, exc_value, traceback):
-            if exc_type:
-                print(f"An error occurred: {exc_value}")
-        
-        def set(self, setting, value):
-            """
-            Set a specific ASR setting for the given device.
 
-            Parameters
-            ----------
-            setting : string
-                The device setting to be altered
-            value : string
-                The value of the device setting to be altered
-
-            Returns
-            -------
-            None.
-
-            """
-            internal_key = self.settings_map.get(setting)
-            if not internal_key:
-                print(f"'{setting}' is not a recognized setting.")
-                return
         
-            try:
-                self.obj.settings.set_string(internal_key, value)
-                value = self.device.settings.get_string(internal_key)
-                print(f"{setting}: {value}")
-            except Exception as e:
-                print(f"Could not update '{setting}': {e}")
+        # def set(self, setting, value):
+        #     """
+        #     Set a specific ASR setting for the given device.
+
+        #     Parameters
+        #     ----------
+        #     setting : string
+        #         The device setting to be altered
+        #     value : string
+        #         The value of the device setting to be altered
+
+        #     Returns
+        #     -------
+        #     None.
+
+        #     """
+        #     internal_key = self.settings_map.get(setting)
+        #     if not internal_key:
+        #         print(f"'{setting}' is not a recognized setting.")
+        #         return
+        
+        #     try:
+        #         self.obj.settings.set_string(internal_key, value)
+        #         value = self.device.settings.get_string(internal_key)
+        #         print(f"{setting}: {value}")
+        #     except Exception as e:
+        #         print(f"Could not update '{setting}': {e}")
                             
         
-        def get(self, setting):
+        def get(self):
             """
             Retrieve a specific ASR setting for the given device.
         
@@ -294,46 +280,48 @@ class ASR():
                 A dictionary containing the requested setting and its value, 
                 or an empty dictionary if the setting is not available.
             """
-        
-            # Map the requested setting to the internal key
-            internal_key = self.settings_map.get(setting)
-            if not internal_key:
-                print(f"'{setting}' is not a recognized setting for this device.")
-                return
+            accel = self._parent.zaberdevice.settings.get_from_all_axes("accel")
+            temp = self._parent.zaberdevice.settings.get_from_all_axes("driver.temperature")
+            knbdir = self._parent.zaberdevice.settings.get_from_all_axes("knob.dir")
+            knbmode = self._parent.zaberdevice.settings.get_from_all_axes("knob.mode")
+            maxspeed = self._parent.zaberdevice.settings.get_from_all_axes("maxspeed")
+            pos = self._parent.zaberdevice.settings.get_from_all_axes("pos")
             
-            # Attempt to retrieve the setting value
-            try:
-                value = self.obj.settings.get_string(internal_key)
-                if value is not None:
-                    print(f"{setting}: {value}")
-                else:
-                    print(f"'{setting}' is available but has no value.")
-            except Exception as e:
-                print(f"Could not retrieve '{setting}': {e}")
+            settings_dict = {
+                "accel": accel,
+                "driver_temperature": temp,
+                "knob_dir": knbdir,
+                "knob_mode": knbmode,
+                "maxspeed": maxspeed,
+                "pos": pos,
+            }
+            
+            return settings_dict
 
-        
-    
+
 if __name__ == "__main__":
     
     # Instantiation of the ASR object
-    stage = ASR(3)
-    
-    # Interact with the device settings
-    stage.settings(stage.device).get("maxspeed")
-    stage.settings(stage.device).set("maxspeed","10")
+    with ASR(8) as asr:
+        
+    # Helps with the settings methods
+        asr.settings._set_parent(asr)
 
-    # Recover the position of each axis on the connected device
-    pos = [stage.getPosition(axis, "mm") for axis in [stage.axis1, stage.axis2]]
-    
+    # Query the position of each axis on the connected device
+        pos = [asr.getPosition(axis, "mm") for axis in asr.axes]
+        
     # Move the device axis in various ways
-    stage.moveAbsolute(stage.axis1, 0, "mm")
-    stage.moveAbsolute(stage.axis2, 0, "mm")
-    stage.moveRelative(stage.axis1, 0, "mm")
-    stage.moveRelative(stage.axis2, 0, "mm")
-    
+        asr.moveAbsolute(asr.axis1, 1, "mm")
+        asr.moveAbsolute(asr.axis2, 2, "mm")
+        asr.moveRelative(asr.axis1, 1, "mm")
+        asr.moveRelative(asr.axis2, 2, "mm")
+        
+    # Recall existing device settings
+        devSettings = asr.settings.get()
+        
     # Reference the device axes
-    stage.home(stage.axis1)
-    stage.home(stage.axis2)
+        for axis in asr.axes:
+            asr.home(axis)
     
     
     
