@@ -16,7 +16,7 @@ class ASR:
     Class to manage connection, control, and settings of the ASR120B100B device.
     """
 
-    def __init__(self, port):
+    def __init__(self, port=8):
         """
         Initialize the ASR device.
 
