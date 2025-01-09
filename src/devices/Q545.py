@@ -80,6 +80,7 @@ class Q545():
             print(f"PI Position: {pos}")
         except Exception as e:
             print(e)
+            
     def move_relative(self, step):
             pos = self.get_position()
             if pos + step < self.LowerLim or pos + step > self.UpperLim:
