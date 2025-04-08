@@ -2,7 +2,7 @@
 The ASR120B100B driver has 2 dials controlling axes 1 and 2 respectively. 
 - Holding either dial for 5 seconds during power-up performs a factory reset.
 - Pressing and holding a dial for 1 second toggles between displacement and velocity control modes.
-- In velocity mode, turning the dial adjusts speed according to its velocity profile
+- In velocity mode, turning the dial adjusts speed incrementally according to its velocity profile.
 - Pressing a dial stops travel along the corresponding axis.
 """
 
@@ -50,8 +50,9 @@ class ASR:
                 self.axes.append(axis)
     
             print(f"ASR axes initialized: {[axis.name for axis in self.axes]}")
-    
+
             if not self.zaberdevice.all_axes.is_homed():
+                # Requests user permission to perform the homing step
                 self._confirm_and_home_axes()
     
         except Exception as e:
