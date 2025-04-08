@@ -25,7 +25,7 @@ class Q545():
         self.model = model
         self.serial = serial
         self.pidevice = None
-        self.UpperLim = 6.5
+        self.UpperLim = -5.0
         self.LowerLim = -6.5
         self.home = 0.0
 
